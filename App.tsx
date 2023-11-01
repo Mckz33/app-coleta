@@ -1,13 +1,33 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image, Button, Alert } from "react-native";
+import { StyleSheet, Text, View, Button, Alert } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  requestForegroundPermissionsAsync,
+  getCurrentPositionAsync,
+  LocationObject,
+} from "expo-location"; //permissao para acessar a localizacao do usuario
+import MapView, { Marker } from "react-native-maps";
 
 export default function App() {
   const [valp, partida] = useState("");
   const [valr1, rota1] = useState("");
   const [valr2, rota2] = useState("");
   const Separator = () => <View style={styles.separator} />;
+
+  const [location, setLocation] = useState<LocationObject | null>(null);
+
+  async function requestLocationPermissions() {
+    const { granted } = await requestForegroundPermissionsAsync();
+
+    if (granted) {
+      const currentPosition = await getCurrentPositionAsync();
+      setLocation(currentPosition);
+      console.log("localizacao atual =>", currentPosition);
+    }
+  }
+  useEffect(() => {
+    requestLocationPermissions();
+  }, []);
 
   const Botoes = () => {
     <Button
@@ -19,11 +39,6 @@ export default function App() {
 
   return (
     <View style={styles.screen}>
-      <Image
-        source={require("./assets/mapa.png")}
-        style={styles.backgroundImage}
-      />
-
       <View>
         <Text style={styles.text}>Selecione um Rota</Text>
 
@@ -131,9 +146,28 @@ export default function App() {
             />
           </View>
         </View>
+
+        <View style={styles.menu}>{/* MENU AQUI */}</View>
       </View>
 
-      <View style={styles.menu}>{/* MENU AQUI */}</View>
+      {location && (
+        <MapView
+          initialRegion={{
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+          style={styles.mapa}
+        >
+          <Marker
+            coordinate={{
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            }}
+          />
+        </MapView>
+      )}
     </View>
   );
 }
@@ -190,6 +224,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 10,
     marginBottom: 10,
+  },
+  // container: {
+  //   flex: 1,
+  //   backgroundColor: "#fff",
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  // },
+  mapa: {
+    flex: 1,
+    width: "100%",
   },
   espaco: {
     margin: 5,
